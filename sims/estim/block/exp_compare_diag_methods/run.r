@@ -117,6 +117,8 @@ for(j in seq_along(K_vec)) {
 # ----------------------------
 # Visualization
 # ----------------------------
+plots_folder <- here("sims", "estim", "block", "exp_compare_diag_methods", "results", "plots")
+png(file = here(plots_folder, "compare_gumbel.png"))
 par(mfrow=c(1,2))
 boxplot(results_closed, names=paste0("K=", K_vec),
         main="Closed-form DMLE", col="lightblue", ylab=expression(hat(theta)))
@@ -125,5 +127,5 @@ abline(h=theta_true, col="red", lwd=2, lty=2)
 boxplot(results_numerical, names=paste0("K=", K_vec),
         main="Numerical DMLE", col="lightgreen", ylab=expression(hat(theta)))
 abline(h=theta_true, col="red", lwd=2, lty=2)
-
 par(mfrow = c(1,1))
+dev.off()

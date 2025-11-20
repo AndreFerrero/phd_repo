@@ -1,0 +1,7 @@
+---
+title: "Block Estimation for Univariate Data"
+author: "Andrea Ferrero"
+date: "2025-11-18"
+output: html_document
+---
+

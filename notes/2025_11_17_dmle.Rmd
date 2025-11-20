@@ -1,0 +1,47 @@
+---
+title: "Diagonal Maximum Likelihood Estimation"
+author: "Andrea Ferrero"
+date: "2025-11-17"
+output: html_document
+---
+
+## 1. Idea and Motivation
+
+The goal is to perform estimation on the copula parameter $\theta$. Standard approach in copula estimation would be classical maximum likelihood.
+
+However, standard MLE requires evaluation of the copula density, which in high dimension can be cumbersome or even impossible (d > 220 is not implemented in the copula package for gumbel copula and others).
+
+The advantage of this other approach introduced in Hofert is that it is fast and does not scale bad in high dimensions.
+
+Everything relies on the idea that the diagonal $\delta_{\theta}(u)$ is the distribution of $Y_i = max(U_j)$ for $j = 1, \dots, d$.
+
+An estimator can therefore be obtained by:
+
+\[
+\hat{\theta}_n = argsup_\theta \sum_{i = 1}^n log {\delta^\prime}_\theta (Y_i)
+\]
+
+For the Gumbel copula, the estimator has even a closed form:
+
+\[
+\hat{\theta}_n^G = \frac{log d}{log n - log(\sum_{i = 1}^n - log Y_i)}   
+\]
+
+If one takes ${\hat{\theta}_n^G}^* = max(\hat{\theta}_n^G, 1)$, he's guaranteed to have a valid estimator.
+
+
+## 2. Application to Archimedean copulas (Gumbel case)
+
+The method is easily applicable to Archimedean copulas as their diagonal and its derivative have a simple analytic form:
+
+\[
+\delta_{\theta}(u) = \psi_\theta(d \psi_\theta^{-1}(u)) \, , \; \delta^{\prime}_{\theta}(u) = d \psi_\theta^{\prime}(d \psi_\theta^{-1}(u)) {(\psi_\theta^{-1})}^\prime(u)
+\]
+
+Once the diagonal has been evaluated in its analytic form, estimation can be performed by optimising the likelihood numerically.
+
+Below we can see a comparison of the estimated parameter for a gumbel copula with increasing observations (K) with d = 12.
+
+```{r, echo = FALSE}
+knitr::include_graphics("plots/compare_gumbel.png")
+```

@@ -11,7 +11,7 @@ The goal is to perform estimation on the copula parameter $\theta$. Standard app
 
 However, standard MLE requires evaluation of the copula density, which in high dimension can be cumbersome or even impossible (d > 220 is not implemented in the copula package for gumbel copula and others).
 
-The advantage of this other approach introduced in Hofert is that it is fast and does not scale bad in high dimensions.
+The advantage of this other approach introduced in Hofert is that it is fast and does not scale bad in high dimensions. Actually, as suggested by Hofert, an increasing number of dimension can be useful in providing information on the dependence between the variables.
 
 Everything relies on the idea that the diagonal $\delta_{\theta}(u)$ is the distribution of $Y_i = max(U_j)$ for $j = 1, \dots, d$.
 
@@ -40,8 +40,34 @@ The method is easily applicable to Archimedean copulas as their diagonal and its
 
 Once the diagonal has been evaluated in its analytic form, estimation can be performed by optimising the likelihood numerically.
 
-Below we can see a comparison of the estimated parameter for a gumbel copula with increasing observations (K) with d = 12.
+Below we can see a comparison of the estimated parameter (true value is $\theta = 1.5$) for a gumbel copula with increasing observations (K) with d = 12.
 
 ```{r, echo = FALSE}
 knitr::include_graphics("plots/compare_gumbel.png")
 ```
+
+## 3. Precision and Dependence
+
+The precision of the estimator was found to degree rapidly when performing DMLE with increasing dependence, due to the instability of the estimates. This has led to the necessity of cutting off the estimated values by only retaining values in (1,10). Below we see the result with $\theta = 4$.
+
+```{r, echo = FALSE}
+knitr::include_graphics("plots/compare_gumbel_theta4.png")
+```
+
+This was found to be connected to how the log-likelihood changes with increasing values of theta:
+
+```{r, echo = FALSE}
+knitr::include_graphics("plots/dloglik_theta.png")
+```
+
+Intuitively this can be explained by how the diagonal stores the available information.
+
+The Gumbel copula diagonal is the following:
+
+\[
+\boxed{
+\delta_\theta(u) = u^{\, d^{1/\theta}}
+}.
+\]
+
+For $\theta \to \infty$, the exponent $a(\theta) = d^{\frac{1}{\theta}} \to 1$, therefore the diagonal gets closer to the identity function.

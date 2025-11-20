@@ -48,7 +48,7 @@ knitr::include_graphics("plots/compare_gumbel.png")
 
 ## 3. Precision and Dependence
 
-The precision of the estimator was found to degree rapidly when performing DMLE with increasing dependence, due to the instability of the estimates. This has led to the necessity of cutting off the estimated values by only retaining values in (1,10). Below we see the result with $\theta = 4$.
+The precision of the estimator was found to decrease rapidly when performing DMLE with increasing dependence, due to the instability of the estimates. This has led to the necessity of cutting off the estimated values by only retaining values in (1,10). Below we see the result with $\theta = 4$.
 
 ```{r, echo = FALSE}
 knitr::include_graphics("plots/compare_gumbel_theta4.png")

@@ -60,8 +60,6 @@ This was found to be connected to how the log-likelihood changes with increasing
 knitr::include_graphics("plots/dloglik_theta.png")
 ```
 
-Intuitively this can be explained by how the diagonal stores the available information.
-
 The Gumbel copula diagonal is the following:
 
 \[

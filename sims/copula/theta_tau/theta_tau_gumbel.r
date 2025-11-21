@@ -1,4 +1,4 @@
-plots_folder <- here("sims", "copula", "plots")
+plots_folder <- here("sims", "copula", "theta_tau", "plots")
 
 set.seed(123)
 

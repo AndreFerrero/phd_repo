@@ -368,12 +368,12 @@ the original sample.</p>
 parameter from just one realisation. Therefore, we need to think of a
 structure that would allow us to learn more from a single dataset.</p>
 <p>The idea is to assume we can break the sequence in <span class="math inline">\(K\)</span> blocks, each of which contains <span class="math inline">\(n_k\)</span> observations (we assume blocks of the
-same size for simplicity, <span class="math inline">\(n_k = n\)</span>).
+same size for simplicity, <span class="math inline">\(n_k = m\)</span>).
 As a starting point, consider blocks to be independent of one another,
 but observations within blocks are dependent and modelled through a
 unique copula:</p>
 <p><span class="math display">\[
-(U_{1,k}, \dots, U_{n, k})_{k = 1, \dots, K} \sim C_\theta
+(U_{1,k}, \dots, U_{m, k})_{k = 1, \dots, K} \sim C_\theta
 \]</span></p>
 <p>This gives us the opportunity to learn about the unique copula
 parameter treating each block of <span class="math inline">\(n_k\)</span> observations as independent
@@ -385,12 +385,15 @@ realisations from the copula model.</p>
 dimension is given by Hofert et al. (2013), where they find maximum
 likelihood to be the one performing the best, both under known and
 unknown margins, despite the gain in precision compared to other methods
-in the latter case is not so obvious. However, the experiments show that
-if you were to consider blocks of hundreds of observations (from <span class="math inline">\(n_k &gt; 220\)</span>), computation of the copula
-density would be unfeasible and as a consequence MLE cannot be
-performed. Diagonal MLE can be an alternative as it scales well with
-dimensions, despite taking information from the data only via the copula
-diagonal.</p>
+in the latter case is not so obvious.</p>
+<p>However, the experiments show that if you were to consider blocks of
+hundreds of observations (from <span class="math inline">\(n_k &gt;
+220\)</span>), computation of the copula density would be unfeasible and
+as a consequence MLE cannot be performed. Diagonal MLE can be an
+alternative as it scales well with dimensions, despite taking
+information from the data only via the copula diagonal.</p>
+<p>See notes on Diagonal Estimation for details on frequentist and
+bayesian estimation.</p>
 </div>
 
 

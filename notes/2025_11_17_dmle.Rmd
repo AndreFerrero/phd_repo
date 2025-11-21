@@ -18,13 +18,13 @@ Everything relies on the idea that the diagonal $\delta_{\theta}(u)$ is the dist
 An estimator can therefore be obtained by:
 
 \[
-\hat{\theta}_n = argsup_\theta \sum_{i = 1}^n log {\delta^\prime}_\theta (Y_i)
+\hat{\theta}_n = \operatorname*{arg\,sup}_{\theta \in \Theta} \sum_{i = 1}^n \log {\delta^\prime}_\theta (Y_i)
 \]
 
 For the Gumbel copula, the estimator has even a closed form:
 
 \[
-\hat{\theta}_n^G = \frac{log d}{log n - log(\sum_{i = 1}^n - log Y_i)}   
+\hat{\theta}_n^G = \frac{\log d}{\log n - \log(\sum_{i = 1}^n - \log Y_i)}   
 \]
 
 If one takes ${\hat{\theta}_n^G}^* = max(\hat{\theta}_n^G, 1)$, he's guaranteed to have a valid estimator.

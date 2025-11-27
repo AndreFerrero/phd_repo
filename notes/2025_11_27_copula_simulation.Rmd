@@ -1,0 +1,294 @@
+---
+title: "Copula Simulation - Univariate Case"
+date: "2025-11-27"
+output: pdf_document
+---
+
+# 1. Sampling with copula package
+
+The copula package automatically samples bivariate and multivariate copulas with a convenient function. To use it in our univariate scenario, we conside the number of observations in the dataset as the dimension of the copula. Below the Gumbel case:
+
+```{r}
+set.seed(46)
+library(copula)
+theta <- 1.5
+n <- 200
+
+Gcop <- gumbelCopula(param = theta, dim = n)
+
+U_cop <- rCopula(1, Gcop)
+```
+
+Choosing the margin allows to construct a sample $X_1, ..., X_n \sim H = C(F(x_1), ..., F(x_n))$ by applying $X_i = F^{-1} (U_i)$. For example, taking $X_i \sim Frechet(2)$:
+
+```{r}
+alpha <- 2
+X_cop <- qfrechet(U_cop, shape = alpha)
+```
+
+```{r, echo = FALSE}
+par(mfrow = c(1,2))
+hist(U_cop, main = "Gumbel - copula package")
+plot(density(X_cop), main = "Density of Gumbel-Frechet")
+par(mfrow = c(1,1))
+```
+
+# 2. Stochastic Representation with latent V
+
+To sample from the same copula, we can use the latent variable representation. The latent variable $V$ whose Laplace transform is the Gumbel generator $\psi(t) = \exp \{- t ^{\frac{1}{\theta}}\}$ has distribution $F_V \sim Stable(\alpha = 1/\theta, \beta = 1, \gamma = (cos(\frac{\pi}{2 \theta}))^\theta, \delta = 0 ; pm = 1)$.
+
+```{r}
+set.seed(46)
+library(stabledist)
+
+gum_psi <- function(t, theta){
+    exp(- t ^ (1/theta))
+}
+
+## Stable parameters for gumbel
+
+V <- rstable(
+    n = 1,
+    alpha = 1/theta,
+    beta = 1,
+    gamma = cospi(1/(2 * theta))^theta,
+    delta = 0,
+    pm = 1
+)
+
+E <- rexp(n, V) 
+
+U_v <- gum_psi(E, theta)
+
+X_v <- qfrechet(U_v, alpha)
+
+```
+
+```{r, echo = FALSE}
+par(mfrow = c(1,2))
+hist(U_v, main = "Gumbel - Latent Variable")
+plot(density(X_v), main = "Density of Gumbel-Frechet")
+par(mfrow = c(1,1))
+```
+
+For convenience, we write the sampler function for the U values (the quantile function is left unspecified to allow the freedom to choose the margin F):
+
+```{r}
+# Latent variable
+rGumbV <- function(n, theta) {
+    require(stabledist)
+
+    # Gumbel V r.v.
+    V <- rstable(
+        n = 1,
+        alpha = 1/theta,
+        beta = 1,
+        gamma = cospi(1/(2 * theta))^theta,
+        delta = 0,
+        pm = 1
+    )
+
+    E <- rexp(n, V) 
+
+    # Gumbel generator
+    gum_psi <- function(t, theta){
+        exp(- t ^ (1/theta))
+    }
+
+    #(U_1, ..., U_n) ~ C_psi
+    U <- gum_psi(E, theta)
+
+    return(U)
+}
+
+```
+
+
+# 3. Model identifiability
+
+Below we can see different realisations from a Gumbel-Frechet model and different theta parameters. It seems that the same theta parameter can produce very different samples. When we perform estimation of the parameter, could this create non identifiability?
+
+```{r, echo = FALSE}
+library(ggplot2)
+library(dplyr)
+library(copula)
+library(evd)     # or whichever package provides qfrechet()
+
+set.seed(1234)
+
+# Parameters
+thetas <- c(1.5, 2, 2.5, 3)
+n <- 1000
+n_sims <- 30
+shape_frechet <- 2  # as requested
+
+# Simulate U as before
+all_data_U <- lapply(thetas, function(th) {
+  
+  latent_list <- lapply(1:n_sims, function(sim_id) {
+    data.frame(
+      U = rGumbV(n, th),
+      theta = th,
+      method = "Latent Variable",
+      sim_id = sim_id
+    )
+  })
+  
+  Gcop <- gumbelCopula(param = th, dim = n)
+  copula_list <- lapply(1:n_sims, function(sim_id) {
+    data.frame(
+      U = as.vector(rCopula(1, Gcop)),
+      theta = th,
+      method = "Copula Package",
+      sim_id = sim_id
+    )
+  })
+  
+  do.call(rbind, c(latent_list, copula_list))
+}) %>% bind_rows()
+
+# Transform to Frechet(2) using quantile function
+all_data_F <- all_data_U %>%
+  mutate(
+    X = qfrechet(U, shape = shape_frechet), 
+    # If qfrechet requires also loc/scale arguments, add them (e.g. loc=0, scale=1)
+    theta = theta,
+    method = method,
+    sim_id = sim_id
+  )
+
+# Plot 1: the U‑densities (as you had)
+p_U <- ggplot(all_data_U, aes(x = U, group = sim_id, color = factor(sim_id))) +
+  geom_density(alpha = 0.7, size = 0.4) +
+  facet_grid(theta ~ method) +
+  coord_cartesian(ylim = c(0, 5)) +
+  labs(x = "U", y = "Density", title = paste0("Gumbel – ", n_sims, " replicates")) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p_U)
+
+# Plot 2: the Frechet(2) densities
+p_F <- ggplot(all_data_F, aes(x = X, group = sim_id, color = factor(sim_id))) +
+  geom_density(alpha = 0.7, size = 0.3) +
+  facet_grid(theta ~ method, scales = "free_x") +
+  coord_cartesian(ylim = c(0, 2), xlim = c(0,10)) +
+  labs(x = "X", y = "Density",
+       title = paste0("GFrechet - ", n_sims, " replicates")) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p_F)
+
+```
+
+```{r, echo = FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(copula)
+library(evd)
+
+set.seed(1234)
+
+# Parameters
+thetas <- c(1.5, 2, 2.5, 3)
+n <- 1000
+n_sims <- 1000
+shape_frechet <- 2
+
+# Simulate U
+all_data_U <- lapply(thetas, function(th) {
+  latent_list <- lapply(1:n_sims, function(sim_id) {
+    data.frame(
+      U = rGumbV(n, th),
+      theta = th,
+      method = "Latent Variable",
+      sim_id = sim_id
+    )
+  })
+  
+  Gcop <- gumbelCopula(param = th, dim = n)
+  copula_list <- lapply(1:n_sims, function(sim_id) {
+    data.frame(
+      U = as.vector(rCopula(1, Gcop)),
+      theta = th,
+      method = "Copula Package",
+      sim_id = sim_id
+    )
+  })
+  
+  do.call(rbind, c(latent_list, copula_list))
+}) %>% bind_rows()
+
+# Transform to Frechet(2)
+all_data_F <- all_data_U %>%
+  mutate(X = qfrechet(U, shape = shape_frechet))
+
+# -----------------------------
+# Function to compute median, mean, 95% CI for densities
+# -----------------------------
+compute_density_summary <- function(df, value_col, from = 0, to = NULL, n = 512) {
+  df_summary <- df %>%
+    group_by(theta, method, sim_id) %>%
+    summarise(
+      dens_obj = list(density(get(value_col), from = from, to = to, n = n)),
+      .groups = "drop"
+    ) %>%
+    # Extract x and y from density object
+    rowwise() %>%
+    mutate(
+      x = list(dens_obj$x),
+      y = list(dens_obj$y)
+    ) %>%
+    select(-dens_obj) %>%
+    unnest(c(x, y))  # unnest lists into long format
+
+  # Compute median, mean, 95% CI across simulations
+  df_stats <- df_summary %>%
+    group_by(theta, method, x) %>%
+    summarise(
+      median_y = median(y),
+      mean_y = mean(y),
+      lower = quantile(y, 0.1),
+      upper = quantile(y, 0.9),
+      .groups = "drop"
+    )
+  
+  return(df_stats)
+}
+
+
+# Compute summaries
+U_summary <- compute_density_summary(all_data_U, "U", from = 0, to = 1)
+F_summary <- compute_density_summary(all_data_F, "X", from = 0, to = 10)
+
+# -----------------------------
+# Plot U summary
+# -----------------------------
+# Plot U summary
+p_U_summary <- ggplot(U_summary, aes(x = x)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) +
+  geom_line(aes(y = median_y), color = "blue", size = 1) +
+  coord_cartesian(ylim = c(0, 4)) +
+  facet_grid(theta ~ method) +
+  labs(x = "U", y = "Density",
+       title = paste0("Gumbel - ", n_sims, " replicates - Median and 80%")) +
+  theme_minimal(base_size = 14)
+
+print(p_U_summary)
+
+# Plot Fréchet(2) summary
+p_F_summary <- ggplot(F_summary, aes(x = x)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightgreen", alpha = 0.4) +
+  geom_line(aes(y = median_y), color = "green", size = 1) +
+  coord_cartesian(ylim = c(0, 3)) +
+  facet_grid(theta ~ method, scales = "free_x") +
+  labs(x = "X", y = "Density",
+       title = paste0("GFrechet - ", n_sims, " replicates - Median and 80%")) +
+  theme_minimal(base_size = 14)
+
+print(p_F_summary)
+
+
+```

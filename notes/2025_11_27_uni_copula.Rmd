@@ -1,5 +1,5 @@
 ---
-title: "Copula Simulation - Univariate Case"
+title: "Copula Estimation - Univariate Case"
 date: "2025-11-27"
 output: pdf_document
 ---
@@ -104,11 +104,13 @@ rGumbV <- function(n, theta) {
 ```
 
 
-# 3. Model identifiability
+# 3. Model likelihood and identifiability
 
-Below we can see different realisations from a Gumbel-Frechet model and different theta parameters. It seems that the same theta parameter can produce very different samples. When we perform estimation of the parameter, could this create non identifiability?
+# 3.1 Simulation
 
-```{r, echo = FALSE}
+Below we can see different realisations from a Gumbel-Frechet model and different theta parameters. It seems that different theta parameters lead to very similar realisations. When we perform estimation of the parameter, could this create non identifiability?
+
+```{r, echo = FALSE, cache = TRUE}
 library(ggplot2)
 library(dplyr)
 library(copula)
@@ -182,7 +184,7 @@ print(p_F)
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, cache = TRUE}
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -289,6 +291,68 @@ p_F_summary <- ggplot(F_summary, aes(x = x)) +
   theme_minimal(base_size = 14)
 
 print(p_F_summary)
-
-
 ```
+
+# 3.2 Likelihood
+
+The aim is to show what is the shape of the likelihood of the model.
+
+\[
+\text{Model:}\qquad
+(X_1,\dots,X_n)\sim H_n(\cdot)
+\qquad\text{with}\qquad
+H_n(x_1,\dots,x_n)
+= C_{\theta}\!\big(F(x_1),\dots,F(x_n)\big),
+\]
+where $F$ is the marginal CDF, $f$ its density, and $C_{\theta}$ a copula (with copula density $c_{\theta}$).
+
+\medskip
+
+\begin{align}
+&\; H_n(x_1,\dots,x_n)
+= C_{\theta}\big(u_1,\dots,u_n\big),
+\qquad u_i := F(x_i)
+\nonumber\\
+\Longrightarrow\quad
+&\; h_n(x_1,\dots,x_n)
+\;=\;
+\frac{\partial^n}{\partial x_1\cdots\partial x_n}
+H_n(x_1,\dots,x_n)
+\nonumber\\
+\overset{(\text{chain rule})}{=}\quad
+&\;
+\frac{\partial^n}{\partial u_1\cdots\partial u_n}
+C_{\theta}(u_1,\dots,u_n)
+\cdot
+\prod_{i=1}^n \frac{\partial u_i}{\partial x_i}
+\nonumber\\
+\Rightarrow\quad
+&\;
+\boxed{\,h_n(x_1,\dots,x_n)
+=
+c_{\theta}\!\big(F(x_1),\dots,F(x_n)\big)\,
+\prod_{i=1}^n f(x_i)\,}
+\label{eq:joint-density}
+\end{align}
+
+\medskip
+
+Now the likelihood (viewed as a function of the copula parameter $\theta$)
+for the observed vector $(x_1,\dots,x_n)$ is
+\begin{align}
+L(\theta)
+&\;=\; h_n(x_1,\dots,x_n;\theta)
+\;=\;
+c_{\theta}\big(F(x_1),\dots,F(x_n)\big)\,
+\prod_{i=1}^n f(x_i).
+\end{align}
+Taking logarithms yields the log-likelihood
+\begin{align}
+\ell(\theta)
+:= \log L(\theta)
+&\;=\;
+\log c_{\theta}\big(F(x_1),\dots,F(x_n)\big)
+\;+\;
+\sum_{i=1}^n \log f(x_i).
+\label{eq:loglik}
+\end{align}

@@ -1,4 +1,5 @@
 library(copula)
+library(evd)
 library(coda)
 library(mvtnorm)
 library(future)
@@ -31,25 +32,6 @@ X <- mu_true + sigma_true * (-log(U))^(-1/alpha_true)
 # -----------------------------------------------------------
 # 2. Model Definitions (Fréchet + Gumbel)
 # -----------------------------------------------------------
-
-# Custom Density for Shifted Fréchet
-d_frechet <- function(x, mu, sigma, alpha) {
-  # Support check handled in posterior, but safety here:
-  z <- (x - mu) / sigma
-  if(any(z <= 0)) return(rep(0, length(x)))
-  
-  # PDF: (alpha/sigma) * z^(-1-alpha) * exp(-z^-alpha)
-  (alpha / sigma) * (z^(-1 - alpha)) * exp(-(z^(-alpha)))
-}
-
-# Custom CDF for Shifted Fréchet
-p_frechet <- function(x, mu, sigma, alpha) {
-  z <- (x - mu) / sigma
-  # If x <= mu, probability is 0
-  p <- exp(-(z^(-alpha)))
-  p[x <= mu] <- 0
-  return(p)
-}
 
 log_posterior <- function(param_vec, data) {
   # Unpack parameters
@@ -86,14 +68,14 @@ log_posterior <- function(param_vec, data) {
   lp_alpha <- dgamma(alpha, shape = 3, rate = 1, log = TRUE)
 
   # --- C. MARGINAL LIKELIHOOD ---
-  dens_vals <- d_frechet(data, mu, sigma, alpha)
+  dens_vals <- dfrechet(data, mu, sigma, alpha)
   
   # Safety for log(0)
   if (any(dens_vals <= 0)) return(-Inf)
   ll_margin <- sum(log(dens_vals))
 
   # --- D. COPULA LIKELIHOOD ---
-  u_hat <- p_frechet(data, mu, sigma, alpha)
+  u_hat <- pfrechet(data, mu, sigma, alpha)
   u_hat <- pmin(pmax(u_hat, 1e-8), 1 - 1e-8)
 
   ld_cop <- dCopula(u_hat, 
@@ -109,7 +91,7 @@ log_posterior <- function(param_vec, data) {
 # 3. Worker: Block Adaptive Metropolis
 # -----------------------------------------------------------
 run_worker <- function(data, n_iter, init_vals, chain_id, progress_dir) {
-  library(copula); library(mvtnorm); library(coda)
+  library(copula); library(mvtnorm); library(coda); library(evd)
   
   p_names <- c("theta", "mu", "sigma", "alpha")
   n_par <- length(p_names)

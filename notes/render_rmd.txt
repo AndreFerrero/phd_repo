@@ -1,8 +1,8 @@
-rmarkdown::render("notes/2025_11_17_dmle.Rmd")
+rmarkdown::render("notes/dmle.Rmd")
 
-rmarkdown::render("notes/2025_11_18_block_estimation.Rmd")
+rmarkdown::render("notes/block_estimation.Rmd")
 
-rmarkdown::render("notes/2025_11_19_copula_markov.Rmd")
+rmarkdown::render("notes/copula_markov.Rmd")
 
-rmarkdown::render("notes/2025_11_27_uni_copula.Rmd")
+rmarkdown::render("notes/uni_copula.Rmd")
 

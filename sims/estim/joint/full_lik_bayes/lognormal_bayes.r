@@ -1,8 +1,7 @@
 library(copula)
 library(coda)
 library(mvtnorm)
-library(future)
-library(future.apply)
+library(parallel)
 
 set.seed(123)
 
@@ -86,7 +85,7 @@ log_posterior <- function(param_vec, data) {
 # -----------------------------------------------------------
 # 3. Worker: Block Adaptive Metropolis
 # -----------------------------------------------------------
-run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
+run_worker <- function(data, n_iter, init_vals, chain_id = 1) {
     library(copula)
     library(mvtnorm)
     library(coda)
@@ -102,12 +101,10 @@ run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
         stop("Worker failed: Initial values yield -Inf posterior.")
     }
 
-    cov_mat <- diag(rep(0.01, n_par))
+    cov_mat <- diag(rep(0.05, n_par))
     sd_scale <- (2.38^2) / n_par
-    eps <- 1e-6 * diag(n_par)
-    adapt_start <- 100
-    adapt_stop <- burn_in
-    adapt_freq <- 50
+    cov_prop <- sd_scale * cov_mat
+
     total_accepts <- 0
 
     # --- PROGRESS BAR ---
@@ -115,7 +112,7 @@ run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
     
     for (i in 1:n_iter) {
         # 1. BLOCK PROPOSAL
-        prop_val <- rmvnorm(1, mean = curr_par, sigma = cov_mat)[1, ]
+        prop_val <- rmvnorm(1, mean = curr_par, sigma = cov_prop)[1, ]
         prop_lp <- log_posterior(prop_val, data)
         ratio <- prop_lp - curr_lp
 
@@ -126,12 +123,6 @@ run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
             total_accepts <- total_accepts + 1
         }
         chain[i, ] <- curr_par
-
-        # 3. ADAPTATION
-        if (i > adapt_start && i < adapt_stop && i %% adapt_freq == 0) {
-            emp_cov <- cov(chain[1:i, ])
-            cov_mat <- (sd_scale * emp_cov) + eps
-        }
 
         # 4. UPDATE PROGRESS BAR
         setTxtProgressBar(pb, i)
@@ -152,7 +143,7 @@ run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
 # 4. Execution
 # -----------------------------------------------------------
 n_chains <- 4
-n_iter <- 10000
+n_iter <- 5000
 burn_in <- n_iter / 2
 
 inits_list <- list()
@@ -174,7 +165,7 @@ clusterEvalQ(cl, {
 })
 
 clusterExport(cl, varlist = c(
-    "X", "n_iter", "burn_in", "inits_list", "log_posterior",
+    "X", "n_iter", "inits_list", "log_posterior",
     "run_worker"
 ))
 
@@ -184,7 +175,6 @@ results <- parLapply(cl, 1:n_chains, function(cid) {
     run_worker(
         data = X,
         n_iter = n_iter,
-        burn_in = burn_in,
         init_vals = inits_list[[cid]],
         chain_id = cid
     )
@@ -203,7 +193,7 @@ res_dir <- here("sims", "estim", "joint", "full_lik_bayes", "res")
 
 load(here(res_dir, "lognormal_bayes_chains.Rdata"))
 
-chains_list <- value(futures_list)
+chains_list <- value(results)
 mcmc_obj <- mcmc.list(chains_list)
 mcmc_clean <- window(mcmc_obj, start = burn_in + 1, thin = 5)
 

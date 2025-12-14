@@ -170,7 +170,7 @@ run_worker_bsl <- function(y_obs_sum, n_mcmc, burn_in, n_sim, n_obs, init_param,
       curr_phi <- prop_phi
       curr_param <- prop_param
       curr_post <- prop_post
-      curr_ll <- prop_lp
+      curr_ll <- prop_ll
       acc <- acc + 1
     }
 
@@ -196,7 +196,6 @@ run_worker_bsl <- function(y_obs_sum, n_mcmc, burn_in, n_sim, n_obs, init_param,
 # ==============================================================================
 # 4. Run Parallel Chains
 # ==============================================================================
-set.seed(123)
 
 # ==============================================================================
 # 1. Simulate Data (Log-Normal + Gumbel Copula)
@@ -216,7 +215,7 @@ y_sum <- fn_sum_stats(X)
 n_chains <- 4
 n_mcmc <- 10000
 burn_in <- floor(n_mcmc / 2)
-n_sim_bsl <- 800
+n_sim_bsl <- 1600
 
 inits_list <- list(
   c(0.5, 0.8, 1.8),
@@ -256,7 +255,7 @@ stopCluster(cl)
 
 sbi_dir <- here("sims", "estim", "joint", "SBI")
 res_dir <- here(sbi_dir, "res")
-save(results, file = here(res_dir, "adaptstop_semiBSL_lognorm.Rdata"))
+# save(results, file = here(res_dir, "adaptstop_semiBSL_lognorm.Rdata"))
 
 # ==============================================================================
 # 5. Diagnostics
@@ -271,7 +270,34 @@ effectiveSize(mcmc_clean)
 
 # Traceplots
 par(mfrow = c(1, 3))
-plot(mcmc_clean[, "theta"], main = "Copula Theta")
-plot(mcmc_clean[, "sigma"], main = "Sigma")
-plot(mcmc_clean[, "mu"], main = "Mu")
+plot(mcmc_clean[, "sigma"], main = "Sigma", density = FALSE, auto.layout = FALSE)
+plot(mcmc_clean[, "mu"], main = "Mu", density = FALSE, auto.layout = FALSE)
+plot(mcmc_clean[, "theta"], main = "Copula Theta", density = FALSE, auto.layout = FALSE)
+par(mfrow = c(1, 1))
+
+# DENSITIES
+par(mfrow = c(1, 3))
+theta_dens_est <- density(as.matrix(mcmc_clean)[, "theta"])
+plot(theta_dens_est,
+    main = "Posterior Density of Theta",
+    lwd = 2, col = "blue", xlab = expression(theta)
+)
+abline(v = theta_true, col = "red", lwd = 2, lty = 2)
+legend("topright", c("Posterior", "True"), col = c("blue", "red"), lty = 1:2)
+
+mu_dens_est <- density(as.matrix(mcmc_clean)[, "mu"])
+plot(mu_dens_est,
+    main = "Posterior Density of Mu",
+    lwd = 2, col = "blue", xlab = expression(mu)
+)
+abline(v = mu_true, col = "red", lwd = 2, lty = 2)
+legend("topright", c("Posterior", "True"), col = c("blue", "red"), lty = 1:2)
+
+sigma_dens_est <- density(as.matrix(mcmc_clean)[, "sigma"])
+plot(sigma_dens_est,
+    main = "Posterior Density of Sigma",
+    lwd = 2, col = "blue", xlab = expression(sigma)
+)
+abline(v = sigma_true, col = "red", lwd = 2, lty = 2)
+legend("topright", c("Posterior", "True"), col = c("blue", "red"), lty = 1:2)
 par(mfrow = c(1, 1))

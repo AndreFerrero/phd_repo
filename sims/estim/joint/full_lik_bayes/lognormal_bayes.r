@@ -129,7 +129,7 @@ run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
 
         # 3. ADAPTATION
         if (i > adapt_start && i < adapt_stop && i %% adapt_freq == 0) {
-            emp_cov <- cov(chain[1:i, ])
+            emp_cov <- cov(chain[adapt_start:i, , drop = FALSE])
             cov_mat <- (sd_scale * emp_cov) + eps
         }
 
@@ -152,7 +152,7 @@ run_worker <- function(data, n_iter, burn_in, init_vals, chain_id = 1) {
 # 4. Execution
 # -----------------------------------------------------------
 n_chains <- 4
-n_iter <- 10000
+n_iter <- 20000
 burn_in <- n_iter / 2
 
 inits_list <- list()
@@ -190,7 +190,7 @@ results <- parLapply(cl, 1:n_chains, function(cid) {
     )
 })
 
-# save(results, file = here(res_dir, "adaptstop_lognormal_bayes_chains.Rdata"))
+save(results, file = here(res_dir, "adaptstop_lognormal_bayes_chains.Rdata"))
 
 stopCluster(cl)
 
@@ -203,7 +203,7 @@ res_dir <- here("sims", "estim", "joint", "full_lik_bayes", "res")
 
 load(here(res_dir, "lognormal_bayes_chains.Rdata"))
 
-chains_list <- value(futures_list)
+chains_list <- value(results)
 mcmc_obj <- mcmc.list(chains_list)
 mcmc_clean <- window(mcmc_obj, start = burn_in + 1, thin = 5)
 
@@ -220,21 +220,9 @@ plot(mcmc_clean[, "sigma"], main = "Sigma", density = FALSE, auto.layout = FALSE
 plot(mcmc_clean[, "mu"], main = "Mu", density = FALSE, auto.layout = FALSE)
 par(mfrow = c(1, 1))
 
-# ESTIMATES
-paste("True Theta:", theta_true)
-paste("Posterior Mean Theta:", round(mean(as.matrix(mcmc_clean[, "theta"])), 3))
-paste("Posterior Median Theta:", round(median(as.matrix(mcmc_clean[, "theta"])), 3))
-paste("90% CI:", round(quantile(as.matrix(mcmc_clean[, "theta"]), probs = c(0.1, 0.9)), 3))
+# Pairs posterior
+pairs(as.matrix(mcmc_clean))
 
-paste("True Mu:", mu_true)
-paste("Posterior Mean Mu:", round(mean(as.matrix(mcmc_clean[, "mu"])), 3))
-paste("Posterior Median Mu:", round(median(as.matrix(mcmc_clean[, "mu"])), 3))
-
-paste("True Sigma:", sigma_true)
-paste("Posterior Mean Sigma:", round(mean(as.matrix(mcmc_clean[, "sigma"])), 3))
-paste("Posterior Median Sigma:", round(median(as.matrix(mcmc_clean[, "sigma"])), 3))
-
-####################
 # DENSITIES
 par(mfrow = c(1, 3))
 theta_dens_est <- density(as.matrix(mcmc_clean)[, "theta"])

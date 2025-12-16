@@ -1,0 +1,30 @@
+source("libs/packages.R")
+
+copula_gumbel <- list(
+
+  name = "gumbel",
+
+  simulate_u = function(theta, n) {
+    if (theta < 1) return(NULL)
+
+    val_gamma <- (cos(pi / (2 * theta)))^theta
+    V <- stabledist::rstable(
+      n = 1, alpha = 1 / theta, beta = 1,
+      gamma = val_gamma, delta = 0, pm = 1
+    )
+
+    if (!is.finite(V) || V <= 0) return(NULL)
+
+    E <- rexp(n)
+    exp(-(E / V)^(1 / theta))
+  },
+
+  log_density = function(u, theta) {
+    copula::dCopula(u, copula::gumbelCopula(theta, dim = length(u)), log = TRUE)
+  },
+
+  log_prior = function(theta) {
+    if (theta <= 1) return(-Inf)
+    dgamma(theta - 1, 2, 1, log = TRUE)
+  }
+)

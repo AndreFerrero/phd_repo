@@ -9,8 +9,8 @@
 #' @return Adaptation object
 adapt_robbins_monro <- function(
   target_accept = 0.234,
-  gamma0 = 0.05,
-  kappa = 0.6
+  gamma0 = 1,
+  kappa = 1
 ) {
 
   list(

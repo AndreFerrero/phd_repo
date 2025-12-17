@@ -35,9 +35,9 @@ copula_clayton <- list(
   # --------------------------
   # 3. Log-prior for the copula parameter
   # --------------------------
-  log_prior = function(theta) {
+  log_prior = function(theta, a = 2, b = 1) {
     if (theta <= 0) return(-Inf)
-    dgamma(theta, shape = 2, rate = 1, log = TRUE)
+    dgamma(theta, shape = a, rate = b, log = TRUE)
   }
 
 )

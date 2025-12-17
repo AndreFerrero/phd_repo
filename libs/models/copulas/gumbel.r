@@ -23,8 +23,8 @@ copula_gumbel <- list(
     copula::dCopula(u, copula::gumbelCopula(theta, dim = length(u)), log = TRUE)
   },
 
-  log_prior = function(theta) {
+  log_prior = function(theta, a = 2, b = 1) {
     if (theta <= 1) return(-Inf)
-    dgamma(theta - 1, 2, 1, log = TRUE)
+    dgamma(theta - 1, a, b, log = TRUE)
   }
 )

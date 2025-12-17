@@ -14,7 +14,9 @@ source("libs/packages.R")
 build_logposterior <- function(copula, margin, param_map, data,
                                transform = NULL,
                                inverse_transform = NULL,
-                               log_jacobian = NULL) {
+                               log_jacobian = NULL,
+                               margin_prior = NULL,
+                               copula_prior = NULL) {
   
   function(param_in) {
     

@@ -8,7 +8,6 @@ source("libs/packages.R")
 #' @param sum_stats Function: computes summary statistics from simulated data
 #' @param n_sim Number of simulations per likelihood evaluation
 #' @param log_prior Function: returns log prior for param
-#' @param transform function to transform parameters in unconstrained space
 #' @param inverse_transform function to transform parameters in the original space
 #' @param log_jacobian jacobian function of the transformation
 #'
@@ -37,6 +36,7 @@ build_semibsl_logposterior <- function(
     param_c <- param[param_map$copula]
 
     # --- Prior ---
+    # do.call is to insert the optional prior parameters to overide the defaults
     logprior_m <- do.call(margin$log_prior, c(list(param_m), margin_prior))
     logprior_c <- do.call(copula$log_prior, c(list(param_c), copula_prior))
     logprior <- logprior_m + logprior_c

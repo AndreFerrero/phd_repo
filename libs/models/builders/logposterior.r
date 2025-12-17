@@ -5,7 +5,6 @@ source("libs/packages.R")
 #' @param copula Copula object
 #' @param margin Margin object
 #' @param param_map named list (margin and copula)containing parameter references for each of the 2 object
-#' @param transform function to transform parameters in unconstrained space
 #' @param inverse_transform function to transform parameters in the original space
 #' @param log_jacobian jacobian function of the transformation
 #' 

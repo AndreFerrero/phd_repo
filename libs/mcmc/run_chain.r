@@ -27,7 +27,7 @@ run_chain <- function(
   samples <- matrix(NA, n_iter, p)
   accept  <- logical(n_iter)
 
-  # Initialize proposal state
+  # Initialize proposal state (Sigma)
   prop_state <- proposal$init_state(param)
 
   # Initialize progress bar

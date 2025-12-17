@@ -9,7 +9,6 @@ The logic of this folder is to have one script running the chain loop (`run_chai
 - `adaptation`: Adaptation schemes
 - `engines`: MCMC core step structure (e.g. Metropolis Hastings step)
 - `proposals`: Proposal distributions (e.g. Multivariate gaussian)
-- `run_chain.r`: Single chain loop combining previous pieces
 
 ## Chain logic
 

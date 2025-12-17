@@ -25,9 +25,10 @@ build_logposterior <- function(copula, margin, param_map, data,
     param_m <- param[param_map$margin]
     param_c <- param[param_map$copula]
     
-    # 1. Prior
-    logprior <- copula$log_prior(param_c) +
-          margin$log_prior(param_m)
+    # --- Prior ---
+    logprior_m <- do.call(margin$log_prior, c(list(param_m), margin_prior))
+    logprior_c <- do.call(copula$log_prior, c(list(param_c), copula_prior))
+    logprior <- logprior_m + logprior_c
     
     if (!is.finite(logprior)) return(-Inf)
     

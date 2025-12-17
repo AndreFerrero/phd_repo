@@ -12,12 +12,13 @@ source("libs/packages.R")
 #' @param log_jacobian jacobian function of the transformation
 #'
 #' @return Function(param) -> log-posterior
-build_semibsl_logposterior <- function(
+build_bsl_logposterior <- function(
   copula, margin, param_map,
   data,
   simulator,
   sum_stats,
   n_sim,
+  synthetic_loglik,
   inverse_transform = NULL,
   log_jacobian = NULL,
   margin_prior = NULL,
@@ -52,45 +53,12 @@ build_semibsl_logposterior <- function(
       if (any(is.na(x_sim))) return(-Inf)
       sim_stats[i, ] <- sum_stats(x_sim)
     }
-
-    # Marginal KDE log-likelihood
-    loglik_marg <- 0
-    eta_obs <- numeric(length(y_obs))
-    eta_sim <- matrix(NA, nrow = n_sim, ncol = length(y_obs))
-    for (j in seq_along(y_obs)) {
-      sd_sim <- sd(sim_stats[, j])
-      iqr_sim <- IQR(sim_stats[, j])
-      h <- 0.9 * min(sd_sim, iqr_sim/1.34) * n_sim^(-0.2)
-      if (h == 0) h <- 1e-6
-
-      z_scores <- (y_obs[j] - sim_stats[, j]) / h
-      log_vals <- dnorm(z_scores, log = TRUE)
-      max_val <- max(log_vals)
-      log_pdf <- max_val + log(sum(exp(log_vals - max_val))) - log(n_sim) - log(h)
-      loglik_marg <- loglik_marg + log_pdf
-
-      # Gaussian copula transformation
-      u_obs <- mean(pnorm(z_scores))
-      u_obs <- min(max(u_obs, 1e-6), 1 - 1e-6)
-      eta_obs[j] <- qnorm(u_obs)
-      u_sim <- rank(sim_stats[, j]) / (n_sim + 1)
-      eta_sim[, j] <- qnorm(pmin(pmax(u_sim, 1e-6), 1 - 1e-6))
-    }
-
-    # Copula likelihood (Gaussian copula with empirical correlation)
-    R_hat <- cor(eta_sim)
-    if (det(R_hat) <= 1e-9) R_hat <- R_hat + diag(1e-6, ncol(R_hat))
-    R_inv <- tryCatch(solve(R_hat), error = function(e) MASS::ginv(R_hat))
-    log_det_R <- as.numeric(determinant(R_hat, logarithm = TRUE)$modulus)
-    quad <- t(eta_obs) %*% (R_inv - diag(1, ncol(R_inv))) %*% eta_obs
-    loglik_copula <- -0.5 * log_det_R - 0.5 * quad
-
-    # Total semiBSL log-likelihood
-    total_loglik <- loglik_marg + loglik_copula
+    
+    loglik <- synthetic_loglik(sim_stats, y_obs)
 
     # Jacobian adjustment if in transformed space
     logjac <- if (!is.null(log_jacobian)) log_jacobian(param_init) else 0
 
-    logprior + total_loglik + logjac
+    logprior + loglik + logjac
   }
 }

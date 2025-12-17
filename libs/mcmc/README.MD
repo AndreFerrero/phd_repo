@@ -1,6 +1,15 @@
 # MCMC Scheme
 
+Here we keep all the MCMC related code.
+
 The logic of this folder is to have one script running the chain loop (`run_chain.r`), with the inner functionalities defined outside for modularity.
+
+## Structure
+
+- `adaptation`: Adaptation schemes
+- `engines`: MCMC core step structure (e.g. Metropolis Hastings step)
+- `proposals`: Proposal distributions (e.g. Multivariate gaussian)
+- `run_chain.r`: Single chain loop combining previous pieces
 
 ## Chain logic
 

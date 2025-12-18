@@ -40,4 +40,12 @@ copula_clayton <- list(
     dgamma(theta, shape = a, rate = b, log = TRUE)
   }
 
-)
+  diag = function(u, theta) {
+    n <- length(u)
+    
+    if (theta < 0) return(NA)             # invalid parameter
+    if (theta == 0) return(u^n)           # independence case
+    
+    (n * (u^(-theta) - 1) + 1)^(-1/theta)
+  }
+) 

@@ -27,4 +27,13 @@ copula_gumbel <- list(
     if (theta <= 1) return(-Inf)
     dgamma(theta - 1, a, b, log = TRUE)
   }
+
+  diag = function(u, theta) {
+    n <- length(u)
+    
+    if (theta < 1) return(NA)             # invalid parameter
+    if (theta == 1) return(u^n)           # independence case
+    
+    u^(n^(1/theta))
+}
 )

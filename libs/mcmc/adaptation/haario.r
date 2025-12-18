@@ -18,13 +18,6 @@ adapt_haario <- function(eps = 1e-6, t0 = 1000) {
 
       if (iter <= t0) return(state)
 
-      if (iter == t0 + 1) {
-        state$mean <- param
-        state$cov  <- diag(1e-3, length(param))
-        state$t <- 1
-        return(state)
-      }
-
       # online updating of mean and covariance to avoid storing chain
       state$t <- state$t + 1
 

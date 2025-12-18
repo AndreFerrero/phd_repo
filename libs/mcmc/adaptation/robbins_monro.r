@@ -17,11 +17,6 @@ adapt_robbins_monro <- function(
 
     update = function(state, param, accept, iter) {
 
-      if (iter == 1) {
-        if (is.null(state$scale)) state$scale <- 1
-        return(state)
-      }
-
       # Robbins–Monro step size
       gamma_t <- gamma0 / iter^kappa
 

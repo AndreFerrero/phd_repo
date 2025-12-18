@@ -19,7 +19,6 @@ adapt_robbins_monro <- function(
 
       if (iter == 1) {
         if (is.null(state$scale)) state$scale <- 1
-        if (is.null(state$Sigma0)) state$Sigma0 <- state$Sigma
         return(state)
       }
 

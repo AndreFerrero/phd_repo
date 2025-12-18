@@ -3,47 +3,38 @@
 #' @param Sigma Initial proposal covariance matrix (p x p)
 #'
 #' @return A proposal object with:
-#'   - init(param): initializes internal proposal state
+#'   - init_state(param): initializes internal proposal state
 #'   - propose(param, state): proposes new parameter vector
-#' 
-source("libs/packages.R")
-
 proposal_gaussian_rw <- function(Sigma) {
 
   list(
-
     #' Initialize proposal state
-    #'
-    #' @param param Initial parameter vector
-    #' @return List storing proposal state (e.g. covariance)
+    #' @param param Current parameter vector
+    #' @return List storing proposal state
     init_state = function(param) {
       list(
-        Sigma  = Sigma
+        Sigma  = Sigma,              # current covariance used for proposals
+        Sigma0 = Sigma,              # reference covariance for scaling
+        cov    = diag(1e-6, length(param)), # empirical covariance
+        mean   = param,              # running mean of chain
+        t      = 1,                  # iteration counter
+        scale  = 1                   # Robbins–Monro scale
       )
     },
 
     #' Propose a new parameter value
-    #'
     #' @param param Current parameter vector
     #' @param state Current proposal state
-    #'
     #' @return List with:
-    #'   - param: proposed parameter
-    #'   - log_q_ratio: log q(param | param') - log q(param' | param)
+    #'   - param: proposed parameter vector
+    #'   - log_q_ratio: log symmetric proposal ratio (always 0)
     propose = function(param, state) {
-
       eps <- MASS::mvrnorm(
         n = 1,
         mu = rep(0, length(param)),
         Sigma = state$Sigma
       )
-
-      param_prop <- param + eps
-
-      list(
-        param = param_prop,
-        log_q_ratio = 0  # symmetric proposal
-      )
+      list(param = param + eps, log_q_ratio = 0)
     }
   )
 }

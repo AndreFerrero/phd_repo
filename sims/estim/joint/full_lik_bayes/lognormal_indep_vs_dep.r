@@ -86,7 +86,7 @@ phi_dep <- g_dep(true_param_dep)
 proposal_indep <- proposal_gaussian_rw(Sigma = diag(0.01, 2))
 proposal_dep <- proposal_gaussian_rw(Sigma = diag(0.1, 3))
 
-n_mcmc <- 15000
+n_mcmc <- 10000
 
 # Number of chains
 n_chains <- 4
@@ -104,7 +104,7 @@ inits_dep <- lapply(1:n_chains, function(i) {
 res_par_indep <- run_parallel_chains(
   log_target  = logpost_indep,
   init_values = inits_indep,
-  n_iter      = 10000,
+  n_iter      = n_mcmc,
   proposal    = proposal_indep,
   adapt       = adapt_haario(),
   transform   = g_inv_indep,
@@ -122,7 +122,7 @@ res_par_indep <- run_parallel_chains(
 res_par_dep <- run_parallel_chains(
   log_target  = logpost_dep,
   init_values = inits_dep,
-  n_iter      = 10000,
+  n_iter      = n_mcmc,
   proposal    = proposal_dep,
   adapt       = adapt_haario(),
   transform   = g_inv_dep,
@@ -156,33 +156,14 @@ res_par_dep <- run_parallel_chains(
 full_joint_lik <- here("sims", "estim", "joint", "full_lik_bayes")
 res_full_joint_lik <- here(full_joint_lik, "res")
 
-# save(res_dep, res_indep, file = here(res_full_joint_lik, "indep_vs_dep_10kiter_haario_lognorm_gumbel.Rdata"))
+save(res_par_dep, res_par_indep, file = here(res_full_joint_lik, "indep_vs_dep_4chains_10kiter_haario_lognorm_gumbel.Rdata"))
 
-samples_indep <- t(apply(res_indep$samples, 1, g_inv_indep))
-samples_dep <- t(apply(res_dep$samples, 1, g_inv_dep))
-
-mcmc_samples_indep <- mcmc(samples_indep)
-mcmc_samples_dep <- mcmc(samples_dep)
-
-burn_in <- nrow(samples_indep)/2
+burn_in <- n_mcmc/2
 # burn_in <- 0
-mcmc_clean_indep <- window(mcmc_samples_indep, start = burn_in + 1, thin = 1)
-mcmc_clean_dep <- window(mcmc_samples_dep, start = burn_in + 1, thin = 1)
+mcmc_clean_indep <- window(res_par_indep, start = burn_in + 1, thin = 1)
+mcmc_clean_dep <- window(res_par_dep, start = burn_in + 1, thin = 1)
 
-# Arrange 1 row and 3 columns
-par(mfrow = c(1, 3), mar = c(4, 4, 2, 1))  # smaller margins for tighter plots
-
-plot(as.matrix(mcmc_clean_dep[, "mu"]), type = "l",
-     ylab = "mu", xlab = "Iteration", main = "Trace of mu")
-
-plot(as.matrix(mcmc_clean_dep[, "sigma"]), type = "l",
-     ylab = "sigma", xlab = "Iteration", main = "Trace of sigma")
-
-plot(as.matrix(mcmc_clean_dep[, "theta"]), type = "l",
-     ylab = "theta", xlab = "Iteration", main = "Trace of theta")
-
-# Reset par
-par(mfrow = c(1,1))
+plot(mcmc_clean_dep, density = FALSE)
 
 # Arrange 1 row and 3 columns
 par(mfrow = c(1, 2), mar = c(4, 4, 2, 1))  # smaller margins for tighter plots
@@ -197,7 +178,7 @@ plot(as.matrix(mcmc_clean_indep[, "sigma"]), type = "l",
 par(mfrow = c(1,1))
 
 
-summary(mcmc_samples_indep)
+summary(res_par_dep)
 
 # =============================================================================
 # 4. Recover Limit Distribution G

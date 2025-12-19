@@ -20,6 +20,7 @@ source("libs/mcmc/proposals/gaussian_rw.R")
 source("libs/mcmc/adaptation/none.R")
 source("libs/mcmc/adaptation/haario.R")
 source("libs/mcmc/adaptation/robbins_monro.R")
+
 # =============================================================================
 # 1. Simulate data using the simulator
 # =============================================================================
@@ -27,18 +28,18 @@ param_map <- list(margin = c("mu", "sigma"), copula = "theta")
 simulator <- build_simulator(copula_gumbel, margin_lognormal, param_map)
 
 set.seed(123)
-true_param <- c(mu = 0, sigma = 1, theta = 1.1)
+true_param <- c(mu = 0, sigma = 1, theta = 1.5)
 n_obs <- 150
 X <- simulator(true_param, n_obs)
 
 # =============================================================================
 # 2. Build log-posterior
 # =============================================================================
-to_unconstrained <- function(param) {
+g <- function(param) {
   c(param["mu"], log(param["sigma"]), log(param["theta"] - 1))
 }
 
-from_unconstrained <- function(phi) {
+g_inv <- function(phi) {
   param <- c(
     mu    = phi[1],
     sigma = exp(phi[2]),
@@ -57,28 +58,33 @@ logpost <- build_logposterior(
   margin = margin_lognormal,
   param_map = param_map,
   data = X,
-  inverse_transform = from_unconstrained,
+  inverse_transform = g_inv,
   log_jacobian = log_jacobian
 )
 
 # =============================================================================
 # 3. Define proposal and run chain
 # =============================================================================
-phi_init <- to_unconstrained(c(mu = 0, sigma = 1, theta = 1.5))
+phi_init <- g(c(mu = 0, sigma = 1, theta = 1.5))
 proposal <- proposal_gaussian_rw(Sigma = diag(1, 3))
 
 res <- run_chain(
   log_target = logpost,
   init = phi_init,
-  n_iter = 5000,
+  n_iter = 10000,
   proposal = proposal,
-  adapt = adapt_robbins_monro()
+  adapt = adapt_haario()
 )
+
+full_lik_dir <- here("sims", "estim", "joint", "full_lik_bayes")
+full_lik_res_dir <- here(full_lik_dir, "res")
+# save(res, file = here(full_lik_res_dir, "lognorm_gumbel_10kruns_150obs_adapthaario.Rdata"))
+load(here(full_lik_res_dir, "lognorm_gumbel_10kruns_150obs_adapthaario.Rdata"))
 
 res$conv_state
 
 # Convert samples back to natural space
-samples_natural <- t(apply(res$samples, 1, from_unconstrained))
+samples_natural <- t(apply(res$samples, 1, g_inv))
 mcmc_samples <- mcmc(samples_natural)
 
 burn_in <- nrow(samples_natural)/2
@@ -97,14 +103,14 @@ effectiveSize(mcmc_clean)
 # Arrange 1 row and 3 columns
 par(mfrow = c(1, 3), mar = c(4, 4, 2, 1))  # smaller margins for tighter plots
 
-plot(samples_natural[burnin:nrow(samples_natural), "mu"], type = "l",
-     ylab = "mu", xlab = "Iteration", main = "Trace of mu")
+plot(mcmc_clean[, "mu"], type = "l",
+     ylab = "mu", xlab = "Iteration", main = "Trace of mu", density = FALSE, auto.layout = FALSE,)
 
-plot(samples_natural[burnin:nrow(samples_natural), "sigma"], type = "l",
-     ylab = "sigma", xlab = "Iteration", main = "Trace of sigma")
+plot(mcmc_clean[, "sigma"], type = "l",
+     ylab = "sigma", xlab = "Iteration", main = "Trace of sigma", density = FALSE, auto.layout = FALSE,)
 
-plot(samples_natural[burnin:nrow(samples_natural), "theta"], type = "l",
-     ylab = "theta", xlab = "Iteration", main = "Trace of theta")
+plot(mcmc_clean[, "theta"], type = "l",
+     ylab = "theta", xlab = "Iteration", main = "Trace of theta", density = FALSE, auto.layout = FALSE,)
 
 # Reset par
 par(mfrow = c(1,1))
